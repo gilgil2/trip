@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>파리지앵 마카오 2박3일 대가족 여행</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            parisian: {
+              gold: '#D4AF37',
+              goldDark: '#B89628',
+              navy: '#121F38',
+              navyDark: '#0B1424',
+              soft: '#FAF8F2',
+              card: '#FFFFFF'
+            }
+          },
+          screens: {
+            xs: '375px'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- QRCode generator for easy family mobile sharing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    /* Safe Area Inset Support for iPhone Notch / Dynamic Island */
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Touch friendly momentum scrolling */
+    .smooth-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Hide scrollbars for clean app look */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      padding: 2px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25);
+    }
+    .leaflet-popup-content {
+      margin: 10px 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-amber-200">
+
+  <!-- Top App Navigation Bar (Compact, thumb-friendly) -->
+  <header class="bg-parisian-navy text-white sticky top-0 z-40 shadow-md border-b border-white/10">
+    <div class="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-parisian-gold/20 flex items-center justify-center text-parisian-gold border border-parisian-gold/40 text-lg font-bold">
+          <i class="ph ph-sparkle"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-bold text-sm leading-tight text-white">마카오 대가족 여행</h1>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-parisian-gold text-slate-950 font-bold">9명</span>
+          </div>
+          <p class="text-[11px] text-amber-200/80 font-medium">더 파리지앵 마카오 베이스캠프</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+    <div class="flex items-center gap-1.5">
+      <button onclick="openShareModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition text-base" title="모바일 공유">
+        <i class="ph ph-share-network"></i>
+      </button>
+      <button onclick="switchNavTab('guide')" class="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 flex items-center justify-center text-white transition text-base font-bold" title="마카오 필수 유의사항">
+        <i class="ph ph-warning-circle"></i>
+      </button>
+      <button onclick="openModal('tipModal')" class="w-8 h-8 rounded-full bg-parisian-gold hover:bg-amber-400 active:scale-95 flex items-center justify-center text-slate-950 transition text-base font-bold" title="대가족 꿀팁">
+        <i class="ph ph-baby"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Flight Badge Strip (Horizontal scroll on very small screens) -->
+    <div class="bg-parisian-navyDark/90 px-4 py-1.5 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-300">
+      <span class="flex items-center gap-1 text-sky-300">
+        <i class="ph ph-airplane-landing"></i> 10/7(수) NX825 (10:40 착륙)
+      </span>
+      <span class="text-slate-500">•</span>
+      <span class="flex items-center gap-1 text-rose-300">
+        <i class="ph ph-airplane-takeoff"></i> 10/9(금) NX826 (18:10 출발)
+      </span>
+    </div>
+  </header>
+
+  <!-- Main View Area (Mobile optimized container: max-w-md mx-auto) -->
+  <main class="flex-1 w-full max-w-md mx-auto pb-24 flex flex-col">
+    
+    <!-- VIEW 1: ITINERARY VIEW (Default) -->
+    <section id="view-schedule" class="app-view p-3 space-y-3">
+      
+      <!-- Day Switcher Segmented Control (Big touch targets) -->
+      <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-200 grid grid-cols-3 gap-1">
+        <button id="tab-day1" onclick="switchDay(1)" class="day-tab py-2 px-1 rounded-lg text-center font-bold text-xs transition-all flex flex-col items-center bg-parisian-navy text-white shadow">
+          <span>1일차 (10/7 수)</span>
+          <span class="text-[10px] font-normal opacity-80">도착 ➔ 코타이</span>
+        </button>
+        <button id="tab-day2" onclick="switchDay(2)" class="day-tab py-2 px-1 rounded-lg text-center font-bold text-xs transition-all flex flex-col items-center text-slate-600 hover:bg-slate-50">
+          <span>2일차 (10/8 목)</span>
+          <span class="text-[10px] font-normal opacity-80">반도 ➔ teamLab</span>
+        </button>
+        <button id="tab-day3" onclick="switchDay(3)" class="day-tab py-2 px-1 rounded-lg text-center font-bold text-xs transition-all flex flex-col items-center text-slate-600 hover:bg-slate-50">
+          <span>3일차 (10/9 금)</span>
+          <span class="text-[10px] font-normal opacity-80">타워 ➔ 귀국</span>
+        </button>
+      </div>
+
+      <!-- Breakfast & Care Reminder Banner -->
+      <div id="day-breakfast-banner" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3 flex items-start gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 text-base shadow-sm">
+          <i class="ph ph-coffee"></i>
+        </div>
+        <div class="flex-1 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-900" id="breakfast-title">파리지앵 르 부페 (조식)</span>
+            <span class="text-[10px] bg-amber-200/70 text-amber-900 px-1.5 py-0.5 rounded font-semibold">13:00까지 운영</span>
+          </div>
+          <p id="breakfast-desc" class="text-amber-800 text-[11px] mt-0.5 leading-tight">
+            아침 일찍 서두르지 않고 9시~10시경 뷔페 브런치를 든든히 먹고 느긋하게 출발하는 대가족 안심 일정입니다.
+          </p>
+        </div>
+      </div>
+
+      <!-- Dynamic Timeline Items Container -->
+      <div id="timeline-container" class="space-y-2.5">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: MAP VIEW -->
+    <section id="view-map" class="app-view hidden p-3 flex-1 flex flex-col space-y-3 min-h-[550px]">
+      <!-- Day Route Filter Controls -->
+      <div class="bg-white p-1 rounded-xl shadow-sm border border-slate-200 grid grid-cols-4 gap-1 text-xs">
+        <button id="map-btn-all" onclick="filterMapDay('all')" class="map-filter-btn py-1.5 px-2 rounded-lg font-bold text-center transition-all bg-parisian-navy text-white shadow">
+          전체 동선
+        </button>
+        <button id="map-btn-1" onclick="filterMapDay(1)" class="map-filter-btn py-1.5 px-2 rounded-lg font-bold text-center transition-all text-blue-700 hover:bg-blue-50">
+          1일차 동선
+        </button>
+        <button id="map-btn-2" onclick="filterMapDay(2)" class="map-filter-btn py-1.5 px-2 rounded-lg font-bold text-center transition-all text-purple-700 hover:bg-purple-50">
+          2일차 동선
+        </button>
+        <button id="map-btn-3" onclick="filterMapDay(3)" class="map-filter-btn py-1.5 px-2 rounded-lg font-bold text-center transition-all text-rose-700 hover:bg-rose-50">
+          3일차 동선
+        </button>
+      </div>
+
+      <!-- Route Flow Summary Strip -->
+      <div id="route-flow-summary" class="bg-blue-50/80 border border-blue-200 rounded-xl px-3 py-2 text-[11px] text-blue-900 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar">
+        <i class="ph ph-path text-blue-600 text-sm shrink-0"></i>
+        <span id="route-summary-text" class="font-medium">전체 일정의 주요 거점과 이동 경로가 표시됩니다.</span>
+      </div>
+
+      <!-- Map Container -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1 relative min-h-[380px]">
+        <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700 flex items-center gap-1.5">
+            <span id="map-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="map-status-text">마카오 대가족 이동동선 지도</span>
+          </span>
+          <button onclick="resetMapView()" class="px-2 py-1 bg-white hover:bg-slate-100 rounded-md border border-slate-200 text-slate-600 text-[11px] font-medium flex items-center gap-1 shadow-sm">
+            <i class="ph ph-arrows-out"></i> 전체보기
+          </button>
+        </div>
+        
+        <div id="macau-map" class="w-full h-full min-h-[340px] flex-1 z-10"></div>
+        
+        <!-- Dynamic Legend Bar -->
+        <div id="map-legend-bar" class="px-2.5 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-around text-[10px] text-slate-600 flex-wrap gap-1">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600"></span> 숙소(파리지앵)</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-1 bg-blue-600 rounded"></span> 1일차 코스</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-1 bg-purple-600 rounded"></span> 2일차 코스</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-1 bg-rose-600 rounded"></span> 3일차 코스</span>
+        </div>
+      </div>
+
+      <!-- Quick Spot Card Under Map -->
+      <div id="map-spot-card" class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+          <span id="card-spot-category" class="text-[10px] font-bold uppercase text-amber-700">숙소 / 베이스캠프</span>
+          <a id="card-spot-gmap" href="https://maps.google.com/?cid=1106715818930724883" target="_blank" class="text-[11px] text-blue-600 font-semibold flex items-center gap-0.5">
+            구글지도 길찾기 <i class="ph ph-arrow-square-out"></i>
+          </a>
+        </div>
+        <h3 id="card-spot-title" class="text-sm font-bold text-slate-900 mt-1.5">더 파리지앵 마카오</h3>
+        <p id="card-spot-desc" class="text-xs text-slate-600 mt-1 leading-snug">
+          에펠탑을 본뜬 럭셔리 복합 리조트. 유아용 키즈클럽 '큐브 킹덤'과 실내 쇼핑 아케이드 완비.
+        </p>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+          <span class="text-slate-500">파리지앵 기준: <strong id="card-spot-dist" class="text-slate-800">0 km</strong></span>
+          <span id="card-spot-cost" class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">기점</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: TIPS & TAXI CALCULATOR VIEW -->
+    <section id="view-tips" class="app-view hidden p-3 space-y-3">
+      <!-- 9-person Transport & Taxi Guide -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 text-amber-700">
+          <i class="ph ph-taxi text-xl"></i>
+          <h3 class="font-bold text-sm text-slate-900">9인 대가족 택시 가이드 (런던 블랙캡)</h3>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          마카오의 <strong>6인승 영국식 블랙캡</strong>은 유모차를 접지 않고도 승차가 가능할 만큼 실내가 넓습니다. 어른 3명 + 아이 구성으로 <strong>택시 2대를 분승</strong>하는 것이 가장 빠르고 쾌적합니다.
+        </p>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-600">기본 요금 (첫 1.6km)</span>
+            <span class="font-semibold text-slate-800">21 MOP (약 3,570원)</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">트렁크 짐 1개당</span>
+            <span class="font-semibold text-slate-800">3 MOP (약 510원)</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">공항 출발 할증</span>
+            <span class="font-semibold text-slate-800">8 MOP (약 1,360원)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Care Points -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 text-blue-700">
+          <i class="ph ph-baby text-xl"></i>
+          <h3 class="font-bold text-sm text-slate-900">유아 2명 + 소아 1명 케어 팁</h3>
+        </div>
+        <ul class="text-xs text-slate-600 space-y-2 leading-relaxed">
+          <li class="flex items-start gap-1.5">
+            <i class="ph ph-check-circle text-emerald-600 text-sm shrink-0 mt-0.5"></i>
+            <span><strong>실내 구름다리 활용:</strong> 파리지앵 ↔ 런더너 ↔ 베네시안은 100% 실내 에어컨 보행로라 유모차 주행에 최적입니다.</span>
+          </li>
+          <li class="flex items-start gap-1.5">
+            <i class="ph ph-check-circle text-emerald-600 text-sm shrink-0 mt-0.5"></i>
+            <span><strong>성 바울 성당 유의:</strong> 성당 계단은 유모차를 들고 오르기 힘드니, 계단 아래 광장에서 단체 사진을 찍고 바로 평지 골목으로 이동하세요.</span>
+          </li>
+          <li class="flex items-start gap-1.5">
+            <i class="ph ph-check-circle text-emerald-600 text-sm shrink-0 mt-0.5"></i>
+            <span><strong>식당 아기의자:</strong> 9인은 피크시간 워크인이 어려우므로, 호텔 컨시어지나 구글 예약을 통해 아기의자(High Chair) 2개를 사전 요청하세요.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Essential Emergency Contacts -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+        <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+          <i class="ph ph-phone-call text-rose-600"></i> 긴급 연락처 & 호텔 정보
+        </h4>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <a href="tel:+85328828833" class="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex flex-col">
+            <span class="text-[10px] text-slate-500">파리지앵 마카오 프론트</span>
+            <span class="font-bold text-slate-800 mt-0.5">+853 2882 8833</span>
+          </a>
+          <a href="tel:999" class="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 flex flex-col">
+            <span class="text-[10px] text-slate-500">마카오 경찰/구급 긴급</span>
+            <span class="font-bold text-rose-600 mt-0.5">999 (비상)</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: MACAU TRAVEL ESSENTIAL GUIDE & CAUTIONS VIEW -->
+    <section id="view-guide" class="app-view hidden p-3 space-y-3">
+      
+      <!-- Critical Caution 1: Casino Child Rule -->
+      <div class="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-sm space-y-2">
+        <div class="flex items-center gap-2 text-rose-700">
+          <i class="ph ph-warning-octagon text-2xl font-bold"></i>
+          <div>
+            <h3 class="font-bold text-sm text-rose-950">카지노 구역 미성년자(만 21세 미만) 통과 불가</h3>
+            <span class="text-[10px] bg-rose-200 text-rose-800 font-bold px-1.5 py-0.5 rounded">유모차 절대 진입 금지</span>
+          </div>
+        </div>
+        <p class="text-xs text-rose-900 leading-relaxed">
+          마카오 법령령상 <strong>만 21세 미만 및 유모차는 카지노 영업장 내부를 통과해 가로질러 갈 수 없습니다</strong>(단순 횡단 시에도 경비원에 의해 제지당합니다).
+        </p>
+        <div class="bg-white/80 p-2.5 rounded-xl border border-rose-200 text-xs text-slate-700">
+          <strong>💡 대처법:</strong> 리조트 이동 시 카지노 층(주로 1층 중앙)을 피하고, <strong>2층 쇼핑몰 아케이드(Shop Street) 또는 호텔 외곽 실내 보행로</strong> 표지판을 따라 이동하세요.
+        </div>
+      </div>
+
+      <!-- Currency & Payment Guide -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 text-amber-700">
+          <i class="ph ph-coins text-xl"></i>
+          <h3 class="font-bold text-sm text-slate-900">환전 및 결제 꿀팁 (HKD vs MOP)</h3>
+        </div>
+        <div class="space-y-2 text-xs text-slate-600 leading-relaxed">
+          <div class="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200">
+            <strong class="text-amber-950 block mb-0.5">💵 홍콩 달러(HKD) 그대로 사용 가능</strong>
+            마카오 어디서든 <strong>홍콩달러를 1:1 비율</strong>로 그대로 쓸 수 있습니다. 한국에서 환전할 때 마카오 파타카(MOP) 대신 홍콩달러(HKD)로 환전해오시는 것이 가장 편리합니다.
+          </div>
+          <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <strong class="text-slate-800 block mb-0.5">⚠️ 1,000 HKD 지폐 주의</strong>
+            위조지폐 우려로 작은 가게, 길거리 간식점, 택시에서는 1,000 HKD 고액권을 받지 않는 경우가 많습니다. <strong>500 HKD 이하 권종이나 100 HKD 권종</strong>을 주로 준비하세요.
+          </div>
+          <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <strong class="text-slate-800 block mb-0.5">💳 트래블월렛 / 트래블로그 / 신용카드</strong>
+            호텔, 쇼핑몰, 대형 레스토랑은 해외 결제 신용카드가 원활하나, <strong>쿤하거리 로컬 간식점과 일반 택시는 현금(HKD/MOP) 결제가 기본</strong>이므로 현금을 꼭 소지하세요.
+          </div>
+        </div>
+      </div>
+
+      <!-- Customs & Entry Slip -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center gap-2 text-blue-700">
+          <i class="ph ph-identification-card text-xl"></i>
+          <h3 class="font-bold text-sm text-slate-900">입국 심사 및 입경 슬립(종이쪽지) 보관</h3>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          마카오는 여권에 입국 도장을 찍지 않고, 작은 <strong>하얀색 입경 영수증(Stay Slip)</strong>을 여권 사이에 끼워줍니다.
+        </p>
+        <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200 text-xs text-blue-900">
+          <strong>⚠️ 주의사항:</strong> 호텔 체크인 시 또는 귀국 출국 심사 시 요구할 수 있으므로 <strong>여권에 끼워둔 채 잃어버리지 않도록</strong> 가족 전원의 것을 잘 챙겨두세요.
+        </div>
+      </div>
+
+      <!-- Electrical Plug & Weather Info -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 text-purple-700">
+          <i class="ph ph-plug text-xl"></i>
+          <h3 class="font-bold text-sm text-slate-900">전압 플러그 & 날씨/복장 가이드</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="p-2.5 bg-purple-50/60 rounded-xl border border-purple-200">
+            <span class="font-bold text-purple-950 block mb-1">🔌 콘센트 플러그</span>
+            230V, 영국식 삼각 3핀(G타입). 파리지앵 호텔 객실에는 멀티 콘센트가 구비되어 있으나, 휴대폰 9대 충전을 위해 <strong>멀티 어댑터 1~2개</strong>를 지참하시면 좋습니다.
+          </div>
+          <div class="p-2.5 bg-purple-50/60 rounded-xl border border-purple-200">
+            <span class="font-bold text-purple-950 block mb-1">🧥 10월 날씨 & 겉옷</span>
+            10월 초 마카오는 낮 기온 약 27~30도로 쾌적합니다. 다만 <strong>리조트 실내 에어컨이 매우 강하므로</strong> 아이들과 어르신용 <strong>얇은 가디건이나 바람막이</strong> 필수입니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- Useful Chinese Taxi Addresses -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-900 flex items-center gap-1.5 text-emerald-700">
+            <i class="ph ph-chat-centered-text text-xl"></i>
+            <span>기사님께 보여주는 한자 목적지 카드</span>
+          </h3>
+          <span class="text-[10px] text-slate-400">클릭 시 자동복사</span>
+        </div>
+        <p class="text-[11px] text-slate-500">마카오 택시 기사님들은 영어가 서툴 수 있으므로 아래 한자 명칭을 스마트폰으로 보여주세요.</p>
+        <div class="space-y-1.5 text-xs">
+          <div onclick="copyText('澳門巴黎人', '파리지앵 마카오')" class="p-2 bg-slate-50 active:bg-slate-100 rounded-lg border border-slate-200 flex justify-between items-center cursor-pointer">
+            <span class="font-bold text-slate-800">더 파리지앵 마카오</span>
+            <span class="font-mono text-emerald-700 font-bold">澳門巴黎人 (The Parisian)</span>
+          </div>
+          <div onclick="copyText('大三巴牌坊', '성 바울 성당')" class="p-2 bg-slate-50 active:bg-slate-100 rounded-lg border border-slate-200 flex justify-between items-center cursor-pointer">
+            <span class="font-bold text-slate-800">성 바울 성당 (세나도)</span>
+            <span class="font-mono text-emerald-700 font-bold">大三巴牌坊 (St. Paul)</span>
+          </div>
+          <div onclick="copyText('澳門旅遊塔', '마카오 타워')" class="p-2 bg-slate-50 active:bg-slate-100 rounded-lg border border-slate-200 flex justify-between items-center cursor-pointer">
+            <span class="font-bold text-slate-800">마카오 타워</span>
+            <span class="font-mono text-emerald-700 font-bold">澳門旅遊塔 (Macau Tower)</span>
+          </div>
+          <div onclick="copyText('澳門國際機場', '마카오 공항')" class="p-2 bg-slate-50 active:bg-slate-100 rounded-lg border border-slate-200 flex justify-between items-center cursor-pointer">
+            <span class="font-bold text-slate-800">마카오 국제공항</span>
+            <span class="font-mono text-emerald-700 font-bold">澳門國際機場 (Airport)</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Bottom Tab Navigation Bar (Fixed for single-hand mobile use) -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-4 h-14">
+      <button id="nav-btn-schedule" onclick="switchNavTab('schedule')" class="nav-item active flex flex-col items-center justify-center text-parisian-gold">
+        <i class="ph ph-calendar-check text-xl"></i>
+        <span class="text-[10px] font-bold mt-0.5">일정표</span>
+      </button>
+      <button id="nav-btn-map" onclick="switchNavTab('map')" class="nav-item flex flex-col items-center justify-center text-slate-400 hover:text-slate-700">
+        <i class="ph ph-map-trifold text-xl"></i>
+        <span class="text-[10px] font-semibold mt-0.5">동선지도</span>
+      </button>
+      <button id="nav-btn-tips" onclick="switchNavTab('tips')" class="nav-item flex flex-col items-center justify-center text-slate-400 hover:text-slate-700">
+        <i class="ph ph-taxi text-xl"></i>
+        <span class="text-[10px] font-semibold mt-0.5">교통/가족</span>
+      </button>
+      <button id="nav-btn-guide" onclick="switchNavTab('guide')" class="nav-item flex flex-col items-center justify-center text-slate-400 hover:text-slate-700">
+        <i class="ph ph-book-open-text text-xl"></i>
+        <span class="text-[10px] font-semibold mt-0.5">마카오안내</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Share & Mobile QR Modal -->
+  <div id="shareModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl relative text-center">
+      <button onclick="closeModal('shareModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-lg p-1">
+        <i class="ph ph-x"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 mx-auto flex items-center justify-center text-2xl mb-2">
+        <i class="ph ph-qr-code"></i>
+      </div>
+      <h3 class="font-bold text-slate-900 text-base">핸드폰으로 바로보기</h3>
+      <p class="text-xs text-slate-500 mt-1">가족들의 스마트폰 카메라로 아래 QR 코드를 비추면 즉시 열립니다.</p>
+
+      <!-- QR Code Canvas Container -->
+      <div id="qrcode-container" class="mt-4 p-3 bg-white border border-slate-200 rounded-xl flex justify-center items-center shadow-inner min-h-[160px]"></div>
+
+      <div class="mt-4 flex flex-col gap-2">
+        <button onclick="copyCurrentUrl()" class="w-full py-2 bg-parisian-navy text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-1">
+          <i class="ph ph-link"></i> 링크 주소 복사하기
+        </button>
+        <p class="text-[10px] text-slate-400">
+          💡 Safari/Chrome에서 열고 <strong>[홈 화면에 추가]</strong>를 누르면 일반 앱처럼 홈화면에 아이콘이 생성됩니다!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Big Family Care Tips Modal -->
+  <div id="tipModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+      <button onclick="closeModal('tipModal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-lg p-1">
+        <i class="ph ph-x"></i>
+      </button>
+
+      <div class="flex items-center gap-2 text-amber-700 mb-2">
+        <i class="ph ph-shield-check text-2xl"></i>
+        <h3 class="font-bold text-slate-900 text-base">9인 대가족 안심 매뉴얼</h3>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+        <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+          <strong class="text-amber-950 font-bold block mb-1">🚖 6인승 대형 택시 2대 분승</strong>
+          영국식 런던 블랙캡 택시는 트렁크와 뒷좌석이 넓어 유모차 2대를 접지 않고 싣기 좋습니다. 1대당 성인3+유아 조합으로 2대 나눠타세요.
+        </div>
+        <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-200">
+          <strong class="text-blue-950 font-bold block mb-1">🥐 조식 13:00 마감 브런치 활용</strong>
+          파리지앵 조식은 13시까지 여유롭게 열리므로 매일 아침 유아들을 깨우느라 서두를 필요 없이 느긋하게 브런치를 드시면 됩니다.
+        </div>
+        <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200">
+          <strong class="text-emerald-950 font-bold block mb-1">🚶 실내 구름다리 & 무빙워크</strong>
+          코타이 3대 호텔(파리지앵, 런더너, 베네시안)은 100% 에어컨 실내 통로로 이어져 있고, 쿤하 거리는 야외 무빙워크로 직결됩니다.
+        </div>
+      </div>
+
+      <div class="mt-4 text-center">
+        <button onclick="closeModal('tipModal')" class="w-full py-2 bg-parisian-navy text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition">
+          확인했습니다
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white text-xs px-4 py-2 rounded-full shadow-2xl border border-slate-700 hidden z-50 flex items-center gap-1.5 whitespace-nowrap">
+    <i class="ph ph-check-circle text-emerald-400 text-sm"></i>
+    <span id="toast-message">완료되었습니다.</span>
+  </div>
+
+  <script>
+    // Comprehensive Spots Dataset
+    const MACAU_LOCATIONS = {
+      hotel_parisian: {
+        id: "hotel_parisian",
+        title: "더 파리지앵 마카오 (숙소)",
+        category: "숙소 / 베이스캠프",
+        lat: 22.1444,
+        lng: 113.5606,
+        day: "all",
+        distanceFromBase: "0 km (기점)",
+        transitMethod: "베이스캠프",
+        estimatedCost: "무료",
+        desc: "에펠탑을 본뜬 럭셔리 복합 리조트. 유아용 키즈클럽 '큐브 킹덤'과 실내 에어컨 구름다리가 연결되어 유모차 이동에 가장 용이.",
+        googleUrl: "https://maps.google.com/?cid=1106715818930724883"
+      },
+      airport: {
+        id: "airport",
+        title: "마카오 국제공항",
+        category: "공항 관문",
+        lat: 22.1495,
+        lng: 113.5925,
+        day: "all",
+        distanceFromBase: "약 4.2 km (차량 10분)",
+        transitMethod: "호텔 무료 셔틀버스 또는 6인승 택시 2대",
+        estimatedCost: "셔틀 무료 / 택시 2대 총 약 80~100 MOP (약 15,000원)",
+        desc: "에어마카오 NX825편(10:40 착륙) 도착 및 NX826편(18:10 출발 ➔ 인천 22:45) 귀국.",
+        googleUrl: "https://maps.google.com/?q=Macau+International+Airport"
+      },
+      venetian: {
+        id: "venetian",
+        title: "베네시안 & 팀랩 (teamLab)",
+        category: "실내 몰입 & 운하",
+        lat: 22.1478,
+        lng: 113.5597,
+        day: "2",
+        distanceFromBase: "약 450 m (실내 통로 도보 5분)",
+        transitMethod: "실내 에어컨 연결 보행로 (유모차 100% 최적)",
+        estimatedCost: "무료 (도보 이동)",
+        desc: "실내 인공 운하와 곤돌라, 몰입형 미디어 아트 'teamLab SuperNature' 전시가 열리는 곳.",
+        googleUrl: "https://maps.google.com/?cid=6036232258861821615"
+      },
+      londoner: {
+        id: "londoner",
+        title: "더 런더너 마카오 (빅벤)",
+        category: "야경 & 건축",
+        lat: 22.1440,
+        lng: 113.5658,
+        day: "1",
+        distanceFromBase: "약 350 m (실내외 보행로 도보 4분)",
+        transitMethod: "실내 구름다리 보행로 도보",
+        estimatedCost: "무료 (도보 이동)",
+        desc: "실물 크기 런던 빅벤 시계탑과 야경 라이트쇼. 밤마다 가족 단체 인생샷 촬영 최적.",
+        googleUrl: "https://maps.google.com/?cid=7465253122926234584"
+      },
+      wynn_palace: {
+        id: "wynn_palace",
+        title: "윈 팰리스 (분수쇼 & 케이블카)",
+        category: "야경 엔터테인먼트",
+        lat: 22.1476,
+        lng: 113.5710,
+        day: "1",
+        distanceFromBase: "약 1.5 km (차량 5분)",
+        transitMethod: "택시 2대 분승 또는 도보",
+        estimatedCost: "택시 2대 약 50 MOP (약 8,500원) / 케이블카·분수쇼 무료",
+        desc: "음악에 맞춰 춤추는 분수쇼와 호수 위를 도는 무료 스카이캡 케이블카.",
+        googleUrl: "https://maps.google.com/?cid=10396965417350891806"
+      },
+      rua_cunha: {
+        id: "rua_cunha",
+        title: "타이파 빌리지 (쿤하 거리)",
+        category: "미식 & 골목 산책",
+        lat: 22.1537,
+        lng: 113.5564,
+        day: "1",
+        distanceFromBase: "약 1.1 km (도보 12분)",
+        transitMethod: "파리지앵 서쪽 연결 야외 무빙워크 보행로",
+        estimatedCost: "무료 (보행로 완비)",
+        desc: "마카오 전통 디저트(로드스토우 에그타르트, 육포 등)가 밀집된 보행자 전용 평지 거리.",
+        googleUrl: "https://maps.google.com/?cid=10391189267319925716"
+      },
+      senado: {
+        id: "senado",
+        title: "세나도 광장 & 성 바울 성당",
+        category: "유네스코 세계문화유산",
+        lat: 22.1936,
+        lng: 113.5398,
+        day: "2",
+        distanceFromBase: "약 9.2 km (차량 약 20분)",
+        transitMethod: "6인승 대형 택시 2대 분승",
+        estimatedCost: "택시 2대 약 160~180 MOP (약 28,000~31,000원)",
+        desc: "포르투갈풍 물결 바닥과 성 바울 성당 유적. 계단 아래 평지 광장에서 사진 촬영 추천.",
+        googleUrl: "https://maps.google.com/?cid=17120203641749593079"
+      },
+      macau_tower: {
+        id: "macau_tower",
+        title: "마카오 타워 전망대",
+        category: "전망대 & 랜드마크",
+        lat: 22.1798,
+        lng: 113.5367,
+        day: "3",
+        distanceFromBase: "약 7.8 km (차량 약 15분)",
+        transitMethod: "6인승 대형 택시 2대 분승",
+        estimatedCost: "택시 2대 약 140~160 MOP (약 24,000~28,000원)",
+        desc: "223m 높이의 360도 파노라마 전망대. 실내 엘리베이터와 넓은 평지로 3세대 안심 관람.",
+        googleUrl: "https://maps.google.com/?cid=3749908237214096560"
+      }
+    };
+
+    // Mobile Itinerary Data
+    const ITINERARY_DATA = {
+      1: [
+        {
+          time: "10:40 - 11:50",
+          title: "NX825 착륙 ➔ 파리지앵 짐 보관",
+          spotId: "hotel_parisian",
+          badge: "비행 도착/이동",
+          distance: "4.2 km (10분)",
+          transport: "파리지앵 무료 셔틀 또는 대형 택시 2대",
+          cost: "셔틀 무료 / 택시 2대 약 90 MOP (약 15,300원)",
+          desc: "착륙 후 9명 수하물과 유모차 2대 수령(약 45분). 파리지앵 도착 후 벨데스크에 짐 보관."
+        },
+        {
+          time: "12:00 - 13:30",
+          title: "점심 식사: 파리지앵 내 크리스탈 제이드",
+          spotId: "hotel_parisian",
+          badge: "점심 식사",
+          distance: "0 m (호텔 1층)",
+          transport: "도보 (실내 로비)",
+          cost: "이동비 0원",
+          desc: "호텔 1층 딤섬/중식당에서 아이들과 어르신 모두 입맛에 맞는 편안한 식사."
+        },
+        {
+          time: "13:30 - 16:30",
+          title: "체크인 & 유아 낮잠 / 큐브 킹덤 키즈존",
+          spotId: "hotel_parisian",
+          badge: "휴식 & 놀이",
+          distance: "0 m (호텔 6층)",
+          transport: "엘리베이터 도보",
+          cost: "이동비 0원",
+          desc: "새벽부터 이동한 유아 2명은 룸에서 편안히 낮잠. 소아와 어른 일부는 6층 대형 키즈존 체험."
+        },
+        {
+          time: "17:00 - 18:30",
+          title: "타이파 빌리지 (쿤하 거리) 산책 & 간식",
+          spotId: "rua_cunha",
+          badge: "미식 산책",
+          distance: "약 1.1 km (도보 12분)",
+          transport: "호텔 서쪽 '자동 무빙워크 보행로' 이용",
+          cost: "무료 (무빙워크 완비)",
+          desc: "야외 에스컬레이터와 무빙워크로 평지 이동. 로드스토우 에그타르트와 현지 간식 즐기기."
+        },
+        {
+          time: "19:00 - 20:30",
+          title: "윈 팰리스 분수쇼 & 스카이캡 케이블카",
+          spotId: "wynn_palace",
+          badge: "야경 하이라이트",
+          distance: "약 1.5 km (차량 5분)",
+          transport: "쿤하거리에서 택시 2대 분승",
+          cost: "택시 2대 약 50 MOP (약 8,500원) / 관람 무료",
+          desc: "음악에 맞춘 대형 분수쇼를 무료 케이블카에 앉아 편안히 관람하는 마카오 필수 야경 코스."
+        }
+      ],
+      2: [
+        {
+          time: "08:30 - 10:15",
+          title: "파리지앵 르 부페 조식 (13시까지 운영)",
+          spotId: "hotel_parisian",
+          badge: "호텔 조식 뷔페",
+          distance: "0 m (호텔 1층)",
+          transport: "엘리베이터 도보",
+          cost: "조식 포함 (이동비 0원)",
+          desc: "아침에 아이들을 깨워 서두를 필요 없이 여유롭게 뷔페를 브런치처럼 즐깁니다."
+        },
+        {
+          time: "10:30 - 12:30",
+          title: "마카오 반도: 세나도 광장 & 성 바울 성당",
+          spotId: "senado",
+          badge: "세계문화유산",
+          distance: "약 9.2 km (차량 20분)",
+          transport: "6인승 대형 택시 2대 분승",
+          cost: "택시 2대 약 160~180 MOP (약 28,000~31,000원)",
+          desc: "광장 바닥을 유모차로 산책하고 성 바울 성당 아래 평지에서 9명 단체 기념사진 촬영."
+        },
+        {
+          time: "12:30 - 14:00",
+          title: "성당 주변 디저트 & 매캐니즈 미식 티타임",
+          spotId: "senado",
+          badge: "티타임 & 미식",
+          distance: "약 300 m",
+          transport: "평지 도보",
+          cost: "이동비 0원",
+          desc: "조식을 든든히 먹었으므로 밀크티, 육포 거리 시식, 시원한 카페에서 여유로운 간식 타임."
+        },
+        {
+          time: "14:30 - 17:00",
+          title: "베네시안: teamLab 실내 몰입 인터랙티브",
+          spotId: "venetian",
+          badge: "실내 전시",
+          distance: "약 9.5 km (차량 20분)",
+          transport: "반도에서 택시 2대로 베네시안 이동",
+          cost: "택시 2대 약 160~180 MOP (약 28,000~31,000원)",
+          desc: "더운 오후 실내 teamLab으로 이동. 빛과 소리로 반응하는 환상적인 미디어 아트 체험."
+        },
+        {
+          time: "17:30 - 18:45",
+          title: "베네시안 운하 구경 ➔ 파리지앵 실내 복귀",
+          spotId: "venetian",
+          badge: "실내 보행",
+          distance: "약 450 m (도보 5분)",
+          transport: "실내 에어컨 연결통로 (유모차 100% 최적)",
+          cost: "이동비 0원",
+          desc: "운하 곤돌라 세레나데 감상 후, 에어컨 연결 브릿지를 통해 파리지앵 객실로 편안히 복귀."
+        },
+        {
+          time: "19:15 - 20:45",
+          title: "파리지앵 에펠탑 쇼 & 런더너 빅벤 야경",
+          spotId: "londoner",
+          badge: "인생샷 야경",
+          distance: "약 350 m (도보 4분)",
+          transport: "실내 구름다리 도보",
+          cost: "무료",
+          desc: "호텔 정원에서 황금빛 에펠탑 쇼와 맞은편 런더너 빅벤 광장 야경 투어."
+        }
+      ],
+      3: [
+        {
+          time: "09:00 - 10:45",
+          title: "호텔 브런치 조식(13시 마감) ➔ 체크아웃",
+          spotId: "hotel_parisian",
+          badge: "브런치 & 체크아웃",
+          distance: "0 m (호텔 로비)",
+          transport: "엘리베이터 도보",
+          cost: "조식 포함 (짐 보관 무료)",
+          desc: "마지막 날도 서두르지 않고 뷔페를 브런치처럼 든든히 먹고 체크아웃 후 벨데스크에 짐 보관."
+        },
+        {
+          time: "11:00 - 12:45",
+          title: "마카오 타워 360도 파노라마 전망대",
+          spotId: "macau_tower",
+          badge: "전망대",
+          distance: "약 7.8 km (차량 15분)",
+          transport: "6인승 대형 택시 2대 분승",
+          cost: "택시 2대 약 140~160 MOP (약 24,000~28,000원)",
+          desc: "223m 높이에서 코타이와 마카오 전역을 조망. 넓은 실내와 엘리베이터로 가족 관람에 최적."
+        },
+        {
+          time: "13:15 - 14:30",
+          title: "코타이 복귀 ➔ 베네시안/파리지앵 티타임",
+          spotId: "hotel_parisian",
+          badge: "휴식 & 간식",
+          distance: "약 7.8 km (차량 15분)",
+          transport: "택시 2대로 파리지앵 복귀",
+          cost: "택시 2대 약 140~160 MOP (약 24,000~28,000원)",
+          desc: "브런치를 늦게 먹었으므로 차찬탱(밀크티, 토스트)이나 완탕면 등으로 가볍게 휴식."
+        },
+        {
+          time: "14:30 - 15:40",
+          title: "기념품 쇼핑 (로드스토우 에그타르트) & 짐 수령",
+          spotId: "hotel_parisian",
+          badge: "쇼핑 & 준비",
+          distance: "0 m (실내 쇼핑몰)",
+          transport: "실내 쇼핑몰 도보",
+          cost: "이동비 0원",
+          desc: "선물용 에그타르트 박스를 구매한 뒤 파리지앵 벨데스크에서 9명의 캐리어 수령."
+        },
+        {
+          time: "15:40 - 18:10",
+          title: "공항 이동 ➔ NX826 수속 ➔ 인천 귀국",
+          spotId: "airport",
+          badge: "귀국 (NX826)",
+          distance: "약 4.2 km (차량 10분)",
+          transport: "호텔 무료 셔틀 또는 택시 2대",
+          cost: "셔틀 무료 / 택시 2대 약 80 MOP (약 14,000원)",
+          desc: "공항까지 단 10분! 16:00 전 도착하여 위탁 수하물과 유모차 접수 후 18:10 출발 (인천 22:45 착륙)."
+        }
+      ]
+    };
+
+    // Sequential Route Coordinates for Polylines
+    const ROUTE_PATHS = {
+      1: {
+        color: "#2563EB",
+        lightColor: "#93C5FD",
+        name: "1일차: 도착 ➔ 파리지앵 ➔ 쿤하거리 ➔ 윈팰리스",
+        flowText: "① 공항도착 ➔ ② 파리지앵(체크인/낮잠) ➔ ③ 타이파 쿤하거리 ➔ ④ 윈팰리스 분수쇼 ➔ 파리지앵",
+        spots: [
+          { id: "airport", step: 1, label: "공항 도착 (10:40)" },
+          { id: "hotel_parisian", step: 2, label: "파리지앵 (점심/낮잠)" },
+          { id: "rua_cunha", step: 3, label: "쿤하거리 (도보)" },
+          { id: "wynn_palace", step: 4, label: "윈팰리스 (케이블카)" },
+          { id: "hotel_parisian", step: 5, label: "파리지앵 복귀" }
+        ]
+      },
+      2: {
+        color: "#7C3AED",
+        lightColor: "#C4B5FD",
+        name: "2일차: 조식 ➔ 세나도/성바울 ➔ teamLab ➔ 런더너",
+        flowText: "① 파리지앵 조식브런치 ➔ ② 마카오반도(세나도/성당) ➔ ③ 베네시안 teamLab ➔ ④ 런더너 빅벤 야경",
+        spots: [
+          { id: "hotel_parisian", step: 1, label: "조식 브런치 (10:30 출발)" },
+          { id: "senado", step: 2, label: "세나도 광장 & 성 바울" },
+          { id: "venetian", step: 3, label: "베네시안 teamLab" },
+          { id: "londoner", step: 4, label: "런더너 빅벤 야경" },
+          { id: "hotel_parisian", step: 5, label: "파리지앵 복귀" }
+        ]
+      },
+      3: {
+        color: "#E11D48",
+        lightColor: "#FDA4AF",
+        name: "3일차: 브런치 ➔ 마카오타워 ➔ 기념품 ➔ 공항귀국",
+        flowText: "① 파리지앵 브런치/체크아웃 ➔ ② 마카오 타워 전망대 ➔ ③ 기념품/짐수령 ➔ ④ 공항 귀국(NX826)",
+        spots: [
+          { id: "hotel_parisian", step: 1, label: "브런치 & 체크아웃" },
+          { id: "macau_tower", step: 2, label: "마카오 타워 전망대" },
+          { id: "hotel_parisian", step: 3, label: "에그타르트/짐수령" },
+          { id: "airport", step: 4, label: "공항 귀국 (18:10 출발)" }
+        ]
+      }
+    };
+
+    let map;
+    let markers = {};
+    let routePolylines = [];
+    let routeStepMarkers = [];
+    let currentDay = 1;
+    let currentMapFilter = "all";
+
+    function renderTimeline(day) {
+      currentDay = day;
+      const container = document.getElementById('timeline-container');
+      const items = ITINERARY_DATA[day];
+
+      // Update Banner Text
+      const bannerTitle = document.getElementById('breakfast-title');
+      const bannerDesc = document.getElementById('breakfast-desc');
+      if (day === 1) {
+        bannerTitle.innerText = "1일차 도착 안내 (NX825편 10:40 착륙)";
+        bannerDesc.innerText = "공항에서 파리지앵은 택시로 10분 거리! 11시 50분경 호텔에 도착해 짐을 맡기고 쾌적하게 일정을 시작합니다.";
+      } else if (day === 2) {
+        bannerTitle.innerText = "파리지앵 르 부페 조식 (13:00 마감 브런치)";
+        bannerDesc.innerText = "조식이 13시까지 운영되므로 아침 9시~10시경 브런치를 든든히 먹고 10:30에 마카오 반도로 여유롭게 출발합니다.";
+      } else {
+        bannerTitle.innerText = "마지막 날 브런치 & NX826 (18:10 출발)";
+        bannerDesc.innerText = "느긋하게 브런치를 먹고 체크아웃 후 마카오 타워 관람, 15:40까지 공항에 도착하면 9명 수속이 여유롭습니다.";
+      }
+
+      container.innerHTML = items.map((item, idx) => `
+        <div class="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-sm active:bg-slate-50 transition" onclick="showOnMap('${item.spotId}')">
+          <div class="flex items-center justify-between gap-1 mb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-parisian-navy text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                ${idx + 1}
+              </span>
+              <span class="text-xs font-bold text-slate-900">${item.time}</span>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-800 shrink-0">
+              ${item.badge}
+            </span>
+          </div>
+
+          <h4 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center justify-between">
+            <span>${item.title}</span>
+            <i class="ph ph-map-pin text-amber-600 text-sm shrink-0 ml-1"></i>
+          </h4>
+
+          <p class="text-[11px] text-slate-500 mt-1 leading-snug">${item.desc}</p>
+
+          <div class="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-1 text-[10px] text-slate-600">
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1 text-slate-700 font-medium">
+                <i class="ph ph-navigation-arrow text-blue-600"></i> ${item.transport}
+              </span>
+              <span class="text-slate-500 font-medium">${item.distance}</span>
+            </div>
+            <div class="flex items-center justify-between bg-slate-50 px-2 py-1 rounded">
+              <span class="text-slate-500">예상 요금(9인):</span>
+              <span class="font-bold text-emerald-700">${item.cost}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchDay(day) {
+      document.querySelectorAll('.day-tab').forEach(btn => {
+        btn.classList.remove('bg-parisian-navy', 'text-white', 'shadow');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeBtn = document.getElementById(`tab-day${day}`);
+      activeBtn.classList.remove('text-slate-600');
+      activeBtn.classList.add('bg-parisian-navy', 'text-white', 'shadow');
+
+      renderTimeline(day);
+    }
+
+    function switchNavTab(tab) {
+      // Toggle Views
+      document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('text-parisian-gold', 'active');
+        el.classList.add('text-slate-400');
+      });
+
+      if (tab === 'schedule') {
+        document.getElementById('view-schedule').classList.remove('hidden');
+        document.getElementById('nav-btn-schedule').classList.add('text-parisian-gold', 'active');
+      } else if (tab === 'map') {
+        document.getElementById('view-map').classList.remove('hidden');
+        document.getElementById('nav-btn-map').classList.add('text-parisian-gold', 'active');
+        setTimeout(() => {
+          if (map) {
+            map.invalidateSize();
+            filterMapDay(currentDay);
+          }
+        }, 200);
+      } else if (tab === 'tips') {
+        document.getElementById('view-tips').classList.remove('hidden');
+        document.getElementById('nav-btn-tips').classList.add('text-parisian-gold', 'active');
+      } else if (tab === 'guide') {
+        document.getElementById('view-guide').classList.remove('hidden');
+        document.getElementById('nav-btn-guide').classList.add('text-parisian-gold', 'active');
+      }
+    }
+
+    function showOnMap(spotId) {
+      switchNavTab('map');
+      setTimeout(() => {
+        focusMapLocation(spotId);
+      }, 250);
+    }
+
+    function initMap() {
+      map = L.map('macau-map', {
+        zoomControl: true,
+        scrollWheelZoom: false,
+        touchZoom: true
+      }).setView([22.1550, 113.5550], 13);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Create Base Location Markers
+      Object.keys(MACAU_LOCATIONS).forEach(key => {
+        const spot = MACAU_LOCATIONS[key];
+        const isHotel = key === 'hotel_parisian';
+
+        const markerHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer">
+            <div class="w-8 h-8 rounded-full ${isHotel ? 'bg-amber-500 ring-4 ring-amber-300' : 'bg-parisian-navy ring-2 ring-white'} text-white flex items-center justify-center shadow-lg font-bold text-xs">
+              <i class="ph ${isHotel ? 'ph-crown' : 'ph-map-pin'}"></i>
+            </div>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: markerHtml,
+          className: 'custom-pin',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const marker = L.marker([spot.lat, spot.lng], { icon: icon }).addTo(map);
+
+        marker.bindPopup(`
+          <div class="p-1 font-sans">
+            <strong class="text-amber-800 text-[10px] block">${spot.category}</strong>
+            <span class="font-bold text-slate-900 text-xs">${spot.title}</span>
+            <p class="text-[11px] text-slate-600 mt-1">${spot.desc}</p>
+          </div>
+        `);
+
+        marker.on('click', () => {
+          updateSpotCard(spot.id);
+        });
+
+        markers[key] = marker;
+      });
+
+      // Initial draw of routes
+      drawRoutes('all');
+    }
+
+    function clearRoutes() {
+      routePolylines.forEach(layer => map.removeLayer(layer));
+      routePolylines = [];
+      routeStepMarkers.forEach(m => map.removeLayer(m));
+      routeStepMarkers = [];
+    }
+
+    function drawRoutes(dayFilter) {
+      clearRoutes();
+      const daysToDraw = (dayFilter === 'all') ? [1, 2, 3] : [parseInt(dayFilter)];
+      const bounds = L.latLngBounds();
+
+      daysToDraw.forEach(day => {
+        const route = ROUTE_PATHS[day];
+        if (!route) return;
+
+        const latlngs = route.spots.map(s => {
+          const loc = MACAU_LOCATIONS[s.id];
+          const ll = [loc.lat, loc.lng];
+          bounds.extend(ll);
+          return ll;
+        });
+
+        // 1. Glow border polyline for visual depth
+        const glowLine = L.polyline(latlngs, {
+          color: dayFilter === 'all' ? route.color : '#FFFFFF',
+          weight: dayFilter === 'all' ? 4 : 8,
+          opacity: dayFilter === 'all' ? 0.4 : 0.8,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(map);
+        routePolylines.push(glowLine);
+
+        // 2. Main styled route line
+        const mainLine = L.polyline(latlngs, {
+          color: route.color,
+          weight: dayFilter === 'all' ? 3 : 5,
+          opacity: 0.9,
+          dashArray: dayFilter === 'all' ? '6, 6' : undefined,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(map);
+        routePolylines.push(mainLine);
+
+        // 3. If a specific day is selected, add step number badges (①, ②, ③, ④)
+        if (dayFilter !== 'all') {
+          route.spots.forEach((s, idx) => {
+            const loc = MACAU_LOCATIONS[s.id];
+            // Slight offset if repeating base to avoid exact overlap
+            const latOffset = (s.id === 'hotel_parisian' && idx > 1) ? 0.0006 : 0;
+            const lngOffset = (s.id === 'hotel_parisian' && idx > 1) ? 0.0006 : 0;
+
+            const stepIcon = L.divIcon({
+              html: `
+                <div class="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md border-2 border-white flex items-center justify-center" style="background-color: ${route.color};">
+                  ${idx + 1}
+                </div>
+              `,
+              className: 'step-badge',
+              iconSize: [22, 22],
+              iconAnchor: [11, 28]
+            });
+
+            const stepMarker = L.marker([loc.lat + latOffset, loc.lng + lngOffset], { icon: stepIcon }).addTo(map);
+            stepMarker.bindTooltip(`<strong>${idx + 1}단계</strong>: ${s.label}`, { direction: 'top', offset: [0, -10] });
+            routeStepMarkers.push(stepMarker);
+          });
+        }
+      });
+
+      // Fit map view smoothly to the filtered route bounds
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15 });
+      }
+    }
+
+    function filterMapDay(filter) {
+      currentMapFilter = filter;
+
+      // Update Button Styles
+      document.querySelectorAll('.map-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-parisian-navy', 'bg-blue-600', 'bg-purple-600', 'bg-rose-600', 'text-white', 'shadow');
+        btn.classList.add('hover:bg-slate-50');
+      });
+
+      const activeBtn = document.getElementById(`map-btn-${filter}`);
+      if (filter === 'all') {
+        activeBtn.classList.add('bg-parisian-navy', 'text-white', 'shadow');
+      } else if (filter === 1) {
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
+      } else if (filter === 2) {
+        activeBtn.classList.add('bg-purple-600', 'text-white', 'shadow');
+      } else if (filter === 3) {
+        activeBtn.classList.add('bg-rose-600', 'text-white', 'shadow');
+      }
+
+      // Update Status Text and Legend Bar
+      const summaryBox = document.getElementById('route-flow-summary');
+      const summaryText = document.getElementById('route-summary-text');
+      const statusText = document.getElementById('map-status-text');
+
+      if (filter === 'all') {
+        statusText.innerText = "마카오 전체 동선 (1~3일차 종합)";
+        summaryText.innerText = "전체 일정의 주요 거점과 이동 경로가 표시됩니다.";
+        summaryBox.className = "bg-blue-50/80 border border-blue-200 rounded-xl px-3 py-2 text-[11px] text-blue-900 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar";
+      } else {
+        const route = ROUTE_PATHS[filter];
+        statusText.innerText = route.name;
+        summaryText.innerText = route.flowText;
+
+        if (filter === 1) {
+          summaryBox.className = "bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-[11px] text-blue-900 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar";
+        } else if (filter === 2) {
+          summaryBox.className = "bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 text-[11px] text-purple-900 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar";
+        } else if (filter === 3) {
+          summaryBox.className = "bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 text-[11px] text-rose-900 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar";
+        }
+      }
+
+      drawRoutes(filter);
+    }
+
+    function focusMapLocation(spotId) {
+      const spot = MACAU_LOCATIONS[spotId];
+      if (!spot || !map) return;
+
+      map.flyTo([spot.lat, spot.lng], 15, { duration: 1.0 });
+      updateSpotCard(spotId);
+
+      if (markers[spotId]) {
+        setTimeout(() => {
+          markers[spotId].openPopup();
+        }, 600);
+      }
+    }
+
+    function updateSpotCard(spotId) {
+      const spot = MACAU_LOCATIONS[spotId];
+      if (!spot) return;
+
+      document.getElementById('card-spot-title').innerText = spot.title;
+      document.getElementById('card-spot-category').innerText = spot.category;
+      document.getElementById('card-spot-desc').innerText = spot.desc;
+      document.getElementById('card-spot-dist').innerText = spot.distanceFromBase;
+      document.getElementById('card-spot-cost').innerText = spot.estimatedCost;
+      document.getElementById('card-spot-gmap').href = spot.googleUrl;
+    }
+
+    function resetMapView() {
+      filterMapDay('all');
+    }
+
+    // Modal Handlers
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function openShareModal() {
+      openModal('shareModal');
+      // Generate QR Code on first open
+      const qrContainer = document.getElementById('qrcode-container');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: window.location.href,
+        width: 140,
+        height: 140,
+        colorDark: "#121F38",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2200);
+    }
+
+    function copyText(text, label) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(`${label} 한자 복사 완료!`);
+      } catch (err) {
+        showToast('복사 실패');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function copyCurrentUrl() {
+      const textarea = document.createElement('textarea');
+      textarea.value = window.location.href;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('링크가 복사되었습니다!');
+      } catch (err) {
+        showToast('복사 실패');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // Init on load
+    window.addEventListener('load', () => {
+      initMap();
+      renderTimeline(1);
+    });
+  </script>
+</body>
+</html>
